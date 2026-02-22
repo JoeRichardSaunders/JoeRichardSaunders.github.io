@@ -1,2 +1,2 @@
 # JoeRichardSaunders.github.io
-Website for stand-up comedian Joe Richard Saunders
+Website for comedian Joe Richard Saunders
