@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Westeros House Network: A Network of Ice and Fire | Joe Richard Saunders</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --color-bg-primary: #19102E;
+            --color-bg-elevated: #261C3D;
+            --color-text-primary: #FFFFFF;
+            --color-text-secondary: #A89FBD;
+            --color-accent: #FFD700;
+            --color-accent-hover: #E03C31;
+            --color-border: rgba(56, 46, 82, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 340px;
+            background: var(--color-bg-elevated);
+            border-right: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--color-accent);
+        }
+
+        .sidebar-header p {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            line-height: 1.4;
+        }
+
+        .controls {
+            padding: 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--color-text-secondary);
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            color: var(--color-text-primary);
+            font-size: 0.875rem;
+        }
+
+        select option {
+            padding: 0.5rem;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.625rem;
+            background: var(--color-accent);
+            border: none;
+            border-radius: 0;
+            color: #000000;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        .btn:hover {
+            background: var(--color-accent-hover);
+        }
+
+        .metrics {
+            padding: 1.5rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .metric-item {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--color-bg-primary);
+            border-radius: 6px;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-accent);
+            margin-top: 0.25rem;
+        }
+
+        .main-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .node {
+            cursor: pointer;
+            stroke: var(--color-bg-primary);
+            stroke-width: 2px;
+        }
+
+        .node:hover {
+            stroke: var(--color-accent);
+            stroke-width: 3px;
+        }
+
+        .link {
+            stroke: rgba(253, 215, 0, 0.3);
+            stroke-opacity: 0.6;
+        }
+
+        .node-label {
+            font-size: 10px;
+            fill: var(--color-text-primary);
+            text-anchor: middle;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: var(--color-bg-elevated);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            max-width: 320px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+
+        .tooltip h3 {
+            margin-bottom: 0.5rem;
+            color: var(--color-accent);
+            font-size: 1rem;
+        }
+
+        .tooltip p {
+            margin: 0.25rem 0;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--color-bg-elevated);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 1rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .legend-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            font-size: 0.75rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--color-bg-elevated);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 1rem;
+            max-width: 420px;
+        }
+
+        .info-panel h4 {
+            margin-bottom: 0.5rem;
+            color: var(--color-accent);
+        }
+
+        .info-panel p {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            line-height: 1.4;
+        }
+
+        .timeline-badge {
+            display: inline-block;
+            background: rgba(255, 215, 0, 0.1);
+            color: var(--color-accent);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>A Network of Ice and Fire: Westeros House Network by Joe Richard Saunders (c) 2026</h1>
+                <p>Interactive graph analysis of House relationships across major historical events from the AWOIAF Timeline</p>
+	                <p>Spoiler Warning: May contain spoiler information</p>			
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="timePeriod">Historical Event</label>
+                    <select id="timePeriod">
+                        <option value="conquest">Aegon's Conquest (1 AC)</option>
+                        <option value="dance">Dance of the Dragons (129-131 AC)</option>
+                        <option value="blackfyre1">First Blackfyre Rebellion (196 AC)</option>
+                        <option value="dunk_egg">Great Council & Dunk and Egg (209 AC)</option>
+                        <option value="summerhall">Tragedy at Summerhall (259 AC)</option>
+                        <option value="ninepenny">War of Ninepenny Kings (260 AC)</option>
+                        <option value="rebellion" selected>Robert's Rebellion (282-283 AC)</option>
+                        <option value="greyjoy">Greyjoy's Rebellion (289 AC)</option>
+                        <option value="war">War of Five Kings (298-300 AC)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="relationFilter">Relationship Type</label>
+                    <select id="relationFilter">
+                        <option value="all">All Relationships</option>
+                        <option value="alliance">Alliances</option>
+                        <option value="rivalry">Rivalries</option>
+                        <option value="marriage">Marriage Bonds</option>
+                        <option value="sworn">Sworn Houses</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="nodeSize">Node Size Metric</label>
+                    <select id="nodeSize">
+                        <option value="degree">Degree Centrality</option>
+                        <option value="betweenness">Betweenness Centrality</option>
+                        <option value="closeness">Closeness Centrality</option>
+                        <option value="pagerank">PageRank</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="linkStrength">Link Strength: <span id="linkStrengthValue">50</span></label>
+                    <input type="range" id="linkStrength" min="10" max="100" value="50">
+                </div>
+
+                <div class="control-group">
+                    <label for="tierFilter">House Tier Filter</label>
+                    <select id="tierFilter">
+                        <option value="all">All Houses</option>
+                        <option value="great">Great Houses Only</option>
+                        <option value="great_major">Great & Major Houses</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="detectCommunities()">Detect Communities</button>
+                
+                <div class="control-group" style="margin-top: 1.5rem;">
+                    <label>Export Data</label>
+                    <button class="btn" style="margin-bottom: 0.5rem;" onclick="downloadCSV()">Download CSV</button>
+                    <button class="btn" onclick="downloadMAT()">Download MAT</button>
+                </div>
+            </div>
+
+            <div class="metrics">
+                <h3 style="margin-bottom: 1rem; font-size: 1rem;">Network Metrics</h3>
+                <div class="metric-item">
+                    <div class="metric-label">Total Houses</div>
+                    <div class="metric-value" id="totalNodes">0</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Connections</div>
+                    <div class="metric-value" id="totalLinks">0</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Network Density</div>
+                    <div class="metric-value" id="density">0</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Avg Clustering Coeff</div>
+                    <div class="metric-value" id="clustering">0</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Communities</div>
+                    <div class="metric-value" id="communities">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <svg id="graph"></svg>
+            <div class="tooltip" id="tooltip"></div>
+            
+            <div class="legend">
+                <div class="legend-title">House Regions</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>North</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <span>Riverlands</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span>Vale</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3b82f6;"></div>
+                    <span>Westerlands</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #8b5cf6;"></div>
+                    <span>Reach</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ec4899;"></div>
+                    <span>Stormlands</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f97316;"></div>
+                    <span>Dorne</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #14b8a6;"></div>
+                    <span>Crownlands</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #06b6d4;"></div>
+                    <span>Iron Islands</span>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h4>Graph Theory Analysis</h4>
+                <p id="analysisInfo">Select a historical event to analyze house relationships. The network shows alliances, rivalries, marriages, and sworn allegiances. Node size reflects centrality metrics.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Extended dataset with all major AWOIAF timeline events
+        const housesData = {
+            conquest: {
+                houses: [
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'targaryen', name: 'House Targaryen', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'hoare', name: 'House Hoare', region: 'Riverlands', words: 'Kings of the Isles', tier: 'great' },
+                    { id: 'gardener', name: 'House Gardener', region: 'Reach', words: 'Kings of the Reach', tier: 'great' },
+                    { id: 'bolton', name: 'House Bolton', region: 'North', words: 'Our Blades Are Sharp', tier: 'major' },
+                    { id: 'karstark', name: 'House Karstark', region: 'North', words: 'The Sun of Winter', tier: 'major' },
+                    { id: 'umber', name: 'House Umber', region: 'North', words: '', tier: 'major' },
+                    { id: 'manderly', name: 'House Manderly', region: 'North', words: '', tier: 'major' },
+                    { id: 'glover', name: 'House Glover', region: 'North', words: '', tier: 'minor' },
+                    { id: 'mormont', name: 'House Mormont', region: 'North', words: 'Here We Stand', tier: 'minor' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' },
+                    { id: 'corbray', name: 'House Corbray', region: 'Vale', words: '', tier: 'major' },
+                    { id: 'bracken', name: 'House Bracken', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'blackwood', name: 'House Blackwood', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'mallister', name: 'House Mallister', region: 'Riverlands', words: 'Above the Rest', tier: 'major' },
+                    { id: 'clegane', name: 'House Clegane', region: 'Westerlands', words: '', tier: 'minor' },
+                    { id: 'westerling', name: 'House Westerling', region: 'Westerlands', words: 'Honor, not Honors', tier: 'minor' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'redwyne', name: 'House Redwyne', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'tarly', name: 'House Tarly', region: 'Reach', words: 'First in Battle', tier: 'major' },
+                    { id: 'swann', name: 'House Swann', region: 'Stormlands', words: '', tier: 'major' },
+                    { id: 'dondarrion', name: 'House Dondarrion', region: 'Stormlands', words: '', tier: 'major' },
+                    { id: 'dayne', name: 'House Dayne', region: 'Dorne', words: '', tier: 'major' },
+                    { id: 'yronwood', name: 'House Yronwood', region: 'Dorne', words: 'We Guard the Way', tier: 'major' }
+                ],
+                links: [
+                    { source: 'targaryen', target: 'stark', type: 'alliance', weight: 8 },
+                    { source: 'targaryen', target: 'arryn', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'hoare', type: 'rivalry', weight: 10 },
+                    { source: 'targaryen', target: 'gardener', type: 'rivalry', weight: 10 },
+                    { source: 'lannister', target: 'targaryen', type: 'alliance', weight: 6 },
+                    { source: 'martell', target: 'targaryen', type: 'alliance', weight: 9 },
+                    { source: 'stark', target: 'arryn', type: 'alliance', weight: 5 },
+                    { source: 'tully', target: 'hoare', type: 'sworn', weight: 4 },
+                    { source: 'bolton', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'karstark', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'umber', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'manderly', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'glover', target: 'stark', type: 'sworn', weight: 4 },
+                    { source: 'mormont', target: 'stark', type: 'sworn', weight: 4 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 },
+                    { source: 'corbray', target: 'arryn', type: 'sworn', weight: 5 },
+                    { source: 'bracken', target: 'hoare', type: 'sworn', weight: 5 },
+                    { source: 'blackwood', target: 'hoare', type: 'sworn', weight: 5 },
+                    { source: 'mallister', target: 'hoare', type: 'sworn', weight: 4 },
+                    { source: 'bracken', target: 'blackwood', type: 'rivalry', weight: 8 },
+                    { source: 'clegane', target: 'lannister', type: 'sworn', weight: 5 },
+                    { source: 'westerling', target: 'lannister', type: 'sworn', weight: 4 },
+                    { source: 'hightower', target: 'gardener', type: 'sworn', weight: 8 },
+                    { source: 'redwyne', target: 'gardener', type: 'sworn', weight: 6 },
+                    { source: 'tarly', target: 'gardener', type: 'sworn', weight: 6 },
+                    { source: 'swann', target: 'baratheon', type: 'sworn', weight: 5 },
+                    { source: 'dondarrion', target: 'baratheon', type: 'sworn', weight: 5 },
+                    { source: 'dayne', target: 'martell', type: 'sworn', weight: 7 },
+                    { source: 'yronwood', target: 'martell', type: 'sworn', weight: 7 }
+                ]
+            },
+            dance: {
+                houses: [
+                    { id: 'targaryen_black', name: 'Targaryen (Blacks)', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'targaryen_green', name: 'Targaryen (Greens)', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'velaryon', name: 'House Velaryon', region: 'Crownlands', words: 'The Old, the True, the Brave', tier: 'major' },
+                    { id: 'manderly', name: 'House Manderly', region: 'North', words: '', tier: 'major' },
+                    { id: 'dustin', name: 'House Dustin', region: 'North', words: '', tier: 'major' },
+                    { id: 'bolton', name: 'House Bolton', region: 'North', words: 'Our Blades Are Sharp', tier: 'major' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' },
+                    { id: 'corbray', name: 'House Corbray', region: 'Vale', words: '', tier: 'major' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'blackwood', name: 'House Blackwood', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'bracken', name: 'House Bracken', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'lefford', name: 'House Lefford', region: 'Westerlands', words: '', tier: 'major' },
+                    { id: 'reyne', name: 'House Reyne', region: 'Westerlands', words: '', tier: 'major' },
+                    { id: 'beesbury', name: 'House Beesbury', region: 'Reach', words: 'Beware Our Sting', tier: 'minor' },
+                    { id: 'caswell', name: 'House Caswell', region: 'Reach', words: '', tier: 'minor' }
+                ],
+                links: [
+                    { source: 'targaryen_black', target: 'targaryen_green', type: 'rivalry', weight: 10 },
+                    { source: 'targaryen_black', target: 'stark', type: 'alliance', weight: 8 },
+                    { source: 'targaryen_black', target: 'velaryon', type: 'alliance', weight: 9 },
+                    { source: 'targaryen_black', target: 'tully', type: 'alliance', weight: 7 },
+                    { source: 'targaryen_green', target: 'lannister', type: 'alliance', weight: 7 },
+                    { source: 'targaryen_green', target: 'hightower', type: 'alliance', weight: 9 },
+                    { source: 'targaryen_green', target: 'baratheon', type: 'alliance', weight: 6 },
+                    { source: 'stark', target: 'arryn', type: 'alliance', weight: 5 },
+                    { source: 'manderly', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'dustin', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'bolton', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 },
+                    { source: 'corbray', target: 'arryn', type: 'sworn', weight: 6 },
+                    { source: 'frey', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'blackwood', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'bracken', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'blackwood', target: 'bracken', type: 'rivalry', weight: 9 },
+                    { source: 'lefford', target: 'lannister', type: 'sworn', weight: 6 },
+                    { source: 'reyne', target: 'lannister', type: 'sworn', weight: 6 },
+                    { source: 'beesbury', target: 'hightower', type: 'alliance', weight: 5 },
+                    { source: 'caswell', target: 'hightower', type: 'alliance', weight: 4 }
+                ]
+            },
+            blackfyre1: {
+                houses: [
+                    { id: 'targaryen', name: 'House Targaryen', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'blackfyre', name: 'House Blackfyre', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'bracken', name: 'House Bracken', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'blackwood', name: 'House Blackwood', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'reyne', name: 'House Reyne', region: 'Westerlands', words: '', tier: 'major' },
+                    { id: 'tarbeck', name: 'House Tarbeck', region: 'Westerlands', words: '', tier: 'major' },
+                    { id: 'peake', name: 'House Peake', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'ball', name: 'House Ball', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'yronwood', name: 'House Yronwood', region: 'Dorne', words: 'We Guard the Way', tier: 'major' },
+                    { id: 'dondarrion', name: 'House Dondarrion', region: 'Stormlands', words: '', tier: 'major' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' }
+                ],
+                links: [
+                    { source: 'targaryen', target: 'blackfyre', type: 'rivalry', weight: 10 },
+                    { source: 'targaryen', target: 'stark', type: 'alliance', weight: 8 },
+                    { source: 'targaryen', target: 'arryn', type: 'alliance', weight: 8 },
+                    { source: 'targaryen', target: 'tully', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'blackwood', type: 'alliance', weight: 7 },
+                    { source: 'blackfyre', target: 'bracken', type: 'alliance', weight: 8 },
+                    { source: 'blackfyre', target: 'peake', type: 'alliance', weight: 8 },
+                    { source: 'blackfyre', target: 'ball', type: 'alliance', weight: 7 },
+                    { source: 'blackfyre', target: 'reyne', type: 'alliance', weight: 6 },
+                    { source: 'blackfyre', target: 'yronwood', type: 'alliance', weight: 7 },
+                    { source: 'bracken', target: 'blackwood', type: 'rivalry', weight: 9 },
+                    { source: 'lannister', target: 'targaryen', type: 'alliance', weight: 6 },
+                    { source: 'tyrell', target: 'targaryen', type: 'alliance', weight: 7 },
+                    { source: 'hightower', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'baratheon', target: 'targaryen', type: 'alliance', weight: 7 },
+                    { source: 'dondarrion', target: 'baratheon', type: 'sworn', weight: 6 },
+                    { source: 'frey', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 }
+                ]
+            },
+            dunk_egg: {
+                houses: [
+                    { id: 'targaryen', name: 'House Targaryen', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'greyjoy', name: 'House Greyjoy', region: 'Iron Islands', words: 'We Do Not Sow', tier: 'great' },
+                    { id: 'ashford', name: 'House Ashford', region: 'Reach', words: '', tier: 'minor' },
+                    { id: 'osgrey', name: 'House Osgrey', region: 'Reach', words: '', tier: 'minor' },
+                    { id: 'webber', name: 'House Webber', region: 'Reach', words: '', tier: 'minor' },
+                    { id: 'fossoway_green', name: 'Fossoway of Cider Hall', region: 'Reach', words: 'A Taste of Glory', tier: 'minor' },
+                    { id: 'fossoway_red', name: 'Fossoway of New Barrel', region: 'Reach', words: 'A Taste of Glory', tier: 'minor' },
+                    { id: 'peake', name: 'House Peake', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'redwyne', name: 'House Redwyne', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'tarly', name: 'House Tarly', region: 'Reach', words: 'First in Battle', tier: 'major' },
+                    { id: 'blackwood', name: 'House Blackwood', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'bracken', name: 'House Bracken', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' },
+                    { id: 'dondarrion', name: 'House Dondarrion', region: 'Stormlands', words: '', tier: 'major' }
+                ],
+                links: [
+                    { source: 'targaryen', target: 'stark', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'baratheon', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'tyrell', type: 'alliance', weight: 6 },
+                    { source: 'fossoway_green', target: 'fossoway_red', type: 'rivalry', weight: 8 },
+                    { source: 'osgrey', target: 'webber', type: 'rivalry', weight: 7 },
+                    { source: 'bracken', target: 'blackwood', type: 'rivalry', weight: 9 },
+                    { source: 'hightower', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'redwyne', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'tarly', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'ashford', target: 'tyrell', type: 'sworn', weight: 5 },
+                    { source: 'peake', target: 'tyrell', type: 'sworn', weight: 6 },
+                    { source: 'frey', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'blackwood', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'bracken', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 },
+                    { source: 'dondarrion', target: 'baratheon', type: 'sworn', weight: 6 }
+                ]
+            },
+            summerhall: {
+                houses: [
+                    { id: 'targaryen', name: 'House Targaryen', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'greyjoy', name: 'House Greyjoy', region: 'Iron Islands', words: 'We Do Not Sow', tier: 'great' },
+                    { id: 'bolton', name: 'House Bolton', region: 'North', words: 'Our Blades Are Sharp', tier: 'major' },
+                    { id: 'manderly', name: 'House Manderly', region: 'North', words: '', tier: 'major' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'redwyne', name: 'House Redwyne', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'tarly', name: 'House Tarly', region: 'Reach', words: 'First in Battle', tier: 'major' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'blackwood', name: 'House Blackwood', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'dayne', name: 'House Dayne', region: 'Dorne', words: '', tier: 'major' },
+                    { id: 'yronwood', name: 'House Yronwood', region: 'Dorne', words: 'We Guard the Way', tier: 'major' }
+                ],
+                links: [
+                    { source: 'targaryen', target: 'stark', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'baratheon', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'martell', type: 'alliance', weight: 6 },
+                    { source: 'bolton', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'manderly', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'hightower', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'redwyne', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'tarly', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 },
+                    { source: 'frey', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'blackwood', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'dayne', target: 'martell', type: 'sworn', weight: 7 },
+                    { source: 'yronwood', target: 'martell', type: 'sworn', weight: 7 }
+                ]
+            },
+            ninepenny: {
+                houses: [
+                    { id: 'targaryen', name: 'House Targaryen', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'blackfyre', name: 'House Blackfyre (Exiled)', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'greyjoy', name: 'House Greyjoy', region: 'Iron Islands', words: 'We Do Not Sow', tier: 'great' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'redwyne', name: 'House Redwyne', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'tarly', name: 'House Tarly', region: 'Reach', words: 'First in Battle', tier: 'major' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'dayne', name: 'House Dayne', region: 'Dorne', words: '', tier: 'major' }
+                ],
+                links: [
+                    { source: 'targaryen', target: 'blackfyre', type: 'rivalry', weight: 10 },
+                    { source: 'targaryen', target: 'stark', type: 'alliance', weight: 8 },
+                    { source: 'targaryen', target: 'lannister', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'tyrell', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'baratheon', type: 'alliance', weight: 8 },
+                    { source: 'targaryen', target: 'arryn', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'martell', type: 'alliance', weight: 6 },
+                    { source: 'hightower', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'redwyne', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'tarly', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 },
+                    { source: 'frey', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'dayne', target: 'martell', type: 'sworn', weight: 7 }
+                ]
+            },
+            rebellion: {
+                houses: [
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'targaryen', name: 'House Targaryen', region: 'Crownlands', words: 'Fire and Blood', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'greyjoy', name: 'House Greyjoy', region: 'Iron Islands', words: 'We Do Not Sow', tier: 'great' },
+                    { id: 'bolton', name: 'House Bolton', region: 'North', words: 'Our Blades Are Sharp', tier: 'major' },
+                    { id: 'karstark', name: 'House Karstark', region: 'North', words: 'The Sun of Winter', tier: 'major' },
+                    { id: 'umber', name: 'House Umber', region: 'North', words: '', tier: 'major' },
+                    { id: 'manderly', name: 'House Manderly', region: 'North', words: '', tier: 'major' },
+                    { id: 'mormont', name: 'House Mormont', region: 'North', words: 'Here We Stand', tier: 'minor' },
+                    { id: 'glover', name: 'House Glover', region: 'North', words: '', tier: 'minor' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' },
+                    { id: 'corbray', name: 'House Corbray', region: 'Vale', words: '', tier: 'major' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'blackwood', name: 'House Blackwood', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'bracken', name: 'House Bracken', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'mallister', name: 'House Mallister', region: 'Riverlands', words: 'Above the Rest', tier: 'major' },
+                    { id: 'clegane', name: 'House Clegane', region: 'Westerlands', words: '', tier: 'minor' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'redwyne', name: 'House Redwyne', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'tarly', name: 'House Tarly', region: 'Reach', words: 'First in Battle', tier: 'major' },
+                    { id: 'swann', name: 'House Swann', region: 'Stormlands', words: '', tier: 'major' },
+                    { id: 'dondarrion', name: 'House Dondarrion', region: 'Stormlands', words: '', tier: 'major' },
+                    { id: 'dayne', name: 'House Dayne', region: 'Dorne', words: '', tier: 'major' },
+                    { id: 'yronwood', name: 'House Yronwood', region: 'Dorne', words: 'We Guard the Way', tier: 'major' }
+                ],
+                links: [
+                    { source: 'stark', target: 'baratheon', type: 'alliance', weight: 10 },
+                    { source: 'stark', target: 'arryn', type: 'alliance', weight: 9 },
+                    { source: 'stark', target: 'tully', type: 'marriage', weight: 9 },
+                    { source: 'baratheon', target: 'arryn', type: 'alliance', weight: 9 },
+                    { source: 'baratheon', target: 'tully', type: 'alliance', weight: 8 },
+                    { source: 'stark', target: 'targaryen', type: 'rivalry', weight: 10 },
+                    { source: 'baratheon', target: 'targaryen', type: 'rivalry', weight: 10 },
+                    { source: 'targaryen', target: 'tyrell', type: 'alliance', weight: 7 },
+                    { source: 'targaryen', target: 'martell', type: 'marriage', weight: 8 },
+                    { source: 'lannister', target: 'targaryen', type: 'rivalry', weight: 6 },
+                    { source: 'bolton', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'karstark', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'umber', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'manderly', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'mormont', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'glover', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 },
+                    { source: 'corbray', target: 'arryn', type: 'sworn', weight: 6 },
+                    { source: 'frey', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'blackwood', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'bracken', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'mallister', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'blackwood', target: 'bracken', type: 'rivalry', weight: 9 },
+                    { source: 'clegane', target: 'lannister', type: 'sworn', weight: 6 },
+                    { source: 'hightower', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'redwyne', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'tarly', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'swann', target: 'baratheon', type: 'sworn', weight: 6 },
+                    { source: 'dondarrion', target: 'baratheon', type: 'sworn', weight: 6 },
+                    { source: 'dayne', target: 'martell', type: 'sworn', weight: 7 },
+                    { source: 'yronwood', target: 'martell', type: 'sworn', weight: 7 }
+                ]
+            },
+            greyjoy: {
+                houses: [
+                    { id: 'baratheon', name: 'House Baratheon', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'greyjoy', name: 'House Greyjoy', region: 'Iron Islands', words: 'We Do Not Sow', tier: 'great' },
+                    { id: 'bolton', name: 'House Bolton', region: 'North', words: 'Our Blades Are Sharp', tier: 'major' },
+                    { id: 'manderly', name: 'House Manderly', region: 'North', words: '', tier: 'major' },
+                    { id: 'umber', name: 'House Umber', region: 'North', words: '', tier: 'major' },
+                    { id: 'mormont', name: 'House Mormont', region: 'North', words: 'Here We Stand', tier: 'minor' },
+                    { id: 'mallister', name: 'House Mallister', region: 'Riverlands', words: 'Above the Rest', tier: 'major' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'redwyne', name: 'House Redwyne', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'harlaw', name: 'House Harlaw', region: 'Iron Islands', words: '', tier: 'major' },
+                    { id: 'goodbrother', name: 'House Goodbrother', region: 'Iron Islands', words: '', tier: 'minor' }
+                ],
+                links: [
+                    { source: 'baratheon', target: 'greyjoy', type: 'rivalry', weight: 10 },
+                    { source: 'stark', target: 'greyjoy', type: 'rivalry', weight: 9 },
+                    { source: 'lannister', target: 'greyjoy', type: 'rivalry', weight: 8 },
+                    { source: 'baratheon', target: 'stark', type: 'alliance', weight: 9 },
+                    { source: 'baratheon', target: 'lannister', type: 'alliance', weight: 8 },
+                    { source: 'baratheon', target: 'tyrell', type: 'alliance', weight: 7 },
+                    { source: 'baratheon', target: 'arryn', type: 'alliance', weight: 8 },
+                    { source: 'bolton', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'manderly', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'umber', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'mormont', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'mallister', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'frey', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'redwyne', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'hightower', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'harlaw', target: 'greyjoy', type: 'sworn', weight: 6 },
+                    { source: 'goodbrother', target: 'greyjoy', type: 'sworn', weight: 5 }
+                ]
+            },
+            war: {
+                houses: [
+                    { id: 'stark', name: 'House Stark', region: 'North', words: 'Winter is Coming', tier: 'great' },
+                    { id: 'lannister', name: 'House Lannister', region: 'Westerlands', words: 'Hear Me Roar', tier: 'great' },
+                    { id: 'baratheon_stannis', name: 'Baratheon (Stannis)', region: 'Crownlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'baratheon_renly', name: 'Baratheon (Renly)', region: 'Stormlands', words: 'Ours is the Fury', tier: 'great' },
+                    { id: 'greyjoy', name: 'House Greyjoy', region: 'Iron Islands', words: 'We Do Not Sow', tier: 'great' },
+                    { id: 'tyrell', name: 'House Tyrell', region: 'Reach', words: 'Growing Strong', tier: 'great' },
+                    { id: 'martell', name: 'House Martell', region: 'Dorne', words: 'Unbowed, Unbent, Unbroken', tier: 'great' },
+                    { id: 'arryn', name: 'House Arryn', region: 'Vale', words: 'As High as Honor', tier: 'great' },
+                    { id: 'tully', name: 'House Tully', region: 'Riverlands', words: 'Family, Duty, Honor', tier: 'great' },
+                    { id: 'frey', name: 'House Frey', region: 'Riverlands', words: 'We Stand Together', tier: 'major' },
+                    { id: 'bolton', name: 'House Bolton', region: 'North', words: 'Our Blades are Sharp', tier: 'major' },
+                    { id: 'karstark', name: 'House Karstark', region: 'North', words: 'The Sun of Winter', tier: 'major' },
+                    { id: 'umber', name: 'House Umber', region: 'North', words: '', tier: 'major' },
+                    { id: 'manderly', name: 'House Manderly', region: 'North', words: '', tier: 'major' },
+                    { id: 'mormont', name: 'House Mormont', region: 'North', words: 'Here We Stand', tier: 'minor' },
+                    { id: 'glover', name: 'House Glover', region: 'North', words: '', tier: 'minor' },
+                    { id: 'tallhart', name: 'House Tallhart', region: 'North', words: 'Proud and Free', tier: 'minor' },
+                    { id: 'royce', name: 'House Royce', region: 'Vale', words: 'We Remember', tier: 'major' },
+                    { id: 'corbray', name: 'House Corbray', region: 'Vale', words: '', tier: 'major' },
+                    { id: 'blackwood', name: 'House Blackwood', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'bracken', name: 'House Bracken', region: 'Riverlands', words: '', tier: 'major' },
+                    { id: 'mallister', name: 'House Mallister', region: 'Riverlands', words: 'Above the Rest', tier: 'major' },
+                    { id: 'clegane', name: 'House Clegane', region: 'Westerlands', words: '', tier: 'minor' },
+                    { id: 'hightower', name: 'House Hightower', region: 'Reach', words: 'We Light the Way', tier: 'major' },
+                    { id: 'redwyne', name: 'House Redwyne', region: 'Reach', words: '', tier: 'major' },
+                    { id: 'tarly', name: 'House Tarly', region: 'Reach', words: 'First in Battle', tier: 'major' },
+                    { id: 'florent', name: 'House Florent', region: 'Reach', words: '', tier: 'minor' },
+                    { id: 'swann', name: 'House Swann', region: 'Stormlands', words: '', tier: 'major' },
+                    { id: 'dondarrion', name: 'House Dondarrion', region: 'Stormlands', words: '', tier: 'major' },
+                    { id: 'dayne', name: 'House Dayne', region: 'Dorne', words: '', tier: 'major' },
+                    { id: 'yronwood', name: 'House Yronwood', region: 'Dorne', words: 'We Guard the Way', tier: 'major' },
+                    { id: 'harlaw', name: 'House Harlaw', region: 'Iron Islands', words: '', tier: 'major' }
+                ],
+                links: [
+                    { source: 'stark', target: 'tully', type: 'alliance', weight: 9 },
+                    { source: 'stark', target: 'arryn', type: 'alliance', weight: 7 },
+                    { source: 'stark', target: 'lannister', type: 'rivalry', weight: 10 },
+                    { source: 'lannister', target: 'tyrell', type: 'alliance', weight: 8 },
+                    { source: 'lannister', target: 'frey', type: 'alliance', weight: 7 },
+                    { source: 'lannister', target: 'bolton', type: 'alliance', weight: 7 },
+                    { source: 'baratheon_stannis', target: 'baratheon_renly', type: 'rivalry', weight: 9 },
+                    { source: 'baratheon_stannis', target: 'lannister', type: 'rivalry', weight: 10 },
+                    { source: 'baratheon_renly', target: 'tyrell', type: 'alliance', weight: 9 },
+                    { source: 'tyrell', target: 'baratheon_stannis', type: 'rivalry', weight: 7 },
+                    { source: 'greyjoy', target: 'stark', type: 'rivalry', weight: 8 },
+                    { source: 'stark', target: 'bolton', type: 'rivalry', weight: 9 },
+                    { source: 'stark', target: 'frey', type: 'rivalry', weight: 10 },
+                    { source: 'karstark', target: 'stark', type: 'sworn', weight: 6 },
+                    { source: 'umber', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'manderly', target: 'stark', type: 'sworn', weight: 7 },
+                    { source: 'mormont', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'glover', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'tallhart', target: 'stark', type: 'sworn', weight: 5 },
+                    { source: 'royce', target: 'arryn', type: 'sworn', weight: 7 },
+                    { source: 'corbray', target: 'arryn', type: 'sworn', weight: 6 },
+                    { source: 'blackwood', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'bracken', target: 'tully', type: 'sworn', weight: 5 },
+                    { source: 'mallister', target: 'tully', type: 'sworn', weight: 6 },
+                    { source: 'blackwood', target: 'bracken', type: 'rivalry', weight: 9 },
+                    { source: 'clegane', target: 'lannister', type: 'sworn', weight: 6 },
+                    { source: 'hightower', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'redwyne', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'tarly', target: 'tyrell', type: 'sworn', weight: 7 },
+                    { source: 'florent', target: 'baratheon_stannis', type: 'alliance', weight: 6 },
+                    { source: 'swann', target: 'baratheon_renly', type: 'sworn', weight: 6 },
+                    { source: 'dondarrion', target: 'baratheon_stannis', type: 'sworn', weight: 5 },
+                    { source: 'dayne', target: 'martell', type: 'sworn', weight: 7 },
+                    { source: 'yronwood', target: 'martell', type: 'sworn', weight: 7 },
+                    { source: 'harlaw', target: 'greyjoy', type: 'sworn', weight: 6 }
+                ]
+            }
+        };
+
+        // Region colors
+        const regionColors = {
+            'North': '#ef4444',
+            'Riverlands': '#f59e0b',
+            'Vale': '#10b981',
+            'Westerlands': '#3b82f6',
+            'Reach': '#8b5cf6',
+            'Stormlands': '#ec4899',
+            'Dorne': '#f97316',
+            'Crownlands': '#14b8a6',
+            'Iron Islands': '#06b6d4'
+        };
+
+        // SVG setup
+        const svg = d3.select('#graph');
+        const width = window.innerWidth - 340;
+        const height = window.innerHeight;
+        svg.attr('width', width).attr('height', height);
+
+        const g = svg.append('g');
+        let simulation, nodes, links;
+
+        // Zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+        svg.call(zoom);
+
+        // Initialize graph
+        function initGraph(period) {
+            const data = housesData[period];
+            nodes = data.houses.map(d => ({ ...d }));
+            links = data.links.map(d => ({ ...d }));
+
+            calculateMetrics();
+
+            simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(d => 150 - d.weight * 5))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(40));
+
+            updateGraph();
+        }
+
+        function updateGraph() {
+            g.selectAll('*').remove();
+
+            const link = g.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('stroke-width', d => Math.sqrt(d.weight))
+                .style('stroke', d => {
+                    if (d.type === 'alliance') return 'rgba(16, 185, 129, 0.5)';
+                    if (d.type === 'rivalry') return 'rgba(239, 68, 68, 0.5)';
+                    if (d.type === 'marriage') return 'rgba(236, 72, 153, 0.5)';
+                    return 'rgba(148, 163, 184, 0.3)';
+                });
+
+            const nodeSize = document.getElementById('nodeSize').value;
+            const centrality = calculateCentrality(nodeSize);
+
+            const node = g.append('g')
+                .selectAll('circle')
+                .data(nodes)
+                .enter().append('circle')
+                .attr('class', 'node')
+                .attr('r', d => {
+                    const baseSize = d.tier === 'great' ? 15 : d.tier === 'major' ? 10 : 6;
+                    return baseSize + (centrality[d.id] || 0) * 25;
+                })
+                .attr('fill', d => regionColors[d.region] || '#64748b')
+                .style('opacity', d => d.tier === 'great' ? 1 : d.tier === 'major' ? 0.9 : 0.8)
+                .on('mouseover', showTooltip)
+                .on('mouseout', hideTooltip)
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            const label = g.append('g')
+                .selectAll('text')
+                .data(nodes)
+                .enter().append('text')
+                .attr('class', 'node-label')
+                .text(d => d.name.replace('House ', '').replace(/\s*\(.*?\)\s*/g, ''))
+                .attr('dy', -15);
+
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                label
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+        }
+
+        function calculateCentrality(type) {
+            const centrality = {};
+            
+            if (type === 'degree') {
+                nodes.forEach(node => {
+                    centrality[node.id] = links.filter(l => 
+                        l.source.id === node.id || l.target.id === node.id
+                    ).length / nodes.length;
+                });
+            } else if (type === 'betweenness') {
+                nodes.forEach(node => {
+                    let score = 0;
+                    links.forEach(link => {
+                        const sourceId = link.source.id || link.source;
+                        const targetId = link.target.id || link.target;
+                        if (sourceId !== node.id && targetId !== node.id) {
+                            const nodeLinks = links.filter(l => 
+                                (l.source.id || l.source) === node.id || (l.target.id || l.target) === node.id
+                            );
+                            if (nodeLinks.length > 0) score += 0.1;
+                        }
+                    });
+                    centrality[node.id] = score / nodes.length;
+                });
+            } else if (type === 'closeness') {
+                nodes.forEach(node => {
+                    const distances = [];
+                    nodes.forEach(other => {
+                        if (node.id !== other.id) {
+                            const connected = links.some(l => 
+                                ((l.source.id || l.source) === node.id && (l.target.id || l.target) === other.id) ||
+                                ((l.target.id || l.target) === node.id && (l.source.id || l.source) === other.id)
+                            );
+                            distances.push(connected ? 1 : 2);
+                        }
+                    });
+                    const avg = distances.reduce((a, b) => a + b, 0) / distances.length;
+                    centrality[node.id] = 1 / avg;
+                });
+            } else if (type === 'pagerank') {
+                nodes.forEach(node => {
+                    const inLinks = links.filter(l => (l.target.id || l.target) === node.id);
+                    centrality[node.id] = (0.15 + 0.85 * inLinks.length) / nodes.length;
+                });
+            }
+
+            return centrality;
+        }
+
+        function calculateMetrics() {
+            const n = nodes.length;
+            const m = links.length;
+
+            document.getElementById('totalNodes').textContent = n;
+            document.getElementById('totalLinks').textContent = m;
+
+            const maxLinks = (n * (n - 1)) / 2;
+            const density = (m / maxLinks).toFixed(3);
+            document.getElementById('density').textContent = density;
+
+            let totalClustering = 0;
+            nodes.forEach(node => {
+                const neighbors = new Set();
+                links.forEach(link => {
+                    if ((link.source.id || link.source) === node.id) neighbors.add(link.target.id || link.target);
+                    if ((link.target.id || link.target) === node.id) neighbors.add(link.source.id || link.source);
+                });
+
+                if (neighbors.size < 2) return;
+
+                let triangles = 0;
+                const neighborsArray = Array.from(neighbors);
+                for (let i = 0; i < neighborsArray.length; i++) {
+                    for (let j = i + 1; j < neighborsArray.length; j++) {
+                        if (links.some(l => 
+                            ((l.source.id || l.source) === neighborsArray[i] && (l.target.id || l.target) === neighborsArray[j]) ||
+                            ((l.target.id || l.target) === neighborsArray[i] && (l.source.id || l.source) === neighborsArray[j])
+                        )) {
+                            triangles++;
+                        }
+                    }
+                }
+
+                const possible = (neighbors.size * (neighbors.size - 1)) / 2;
+                totalClustering += triangles / possible;
+            });
+
+            const avgClustering = (totalClustering / n).toFixed(3);
+            document.getElementById('clustering').textContent = avgClustering;
+        }
+
+        function detectCommunities() {
+            const communities = {};
+            let communityId = 0;
+
+            nodes.forEach(node => {
+                if (!communities[node.id]) {
+                    communities[node.id] = communityId;
+                    const queue = [node];
+                    
+                    while (queue.length > 0) {
+                        const current = queue.shift();
+                        links.forEach(link => {
+                            let neighbor = null;
+                            if ((link.source.id || link.source) === current.id) {
+                                neighbor = nodes.find(n => n.id === (link.target.id || link.target));
+                            } else if ((link.target.id || link.target) === current.id) {
+                                neighbor = nodes.find(n => n.id === (link.source.id || link.source));
+                            }
+
+                            if (neighbor && !communities[neighbor.id]) {
+                                communities[neighbor.id] = communityId;
+                                queue.push(neighbor);
+                            }
+                        });
+                    }
+                    communityId++;
+                }
+            });
+
+            document.getElementById('communities').textContent = communityId;
+
+            const communityColors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6'];
+            g.selectAll('circle')
+                .transition()
+                .duration(500)
+                .attr('fill', d => communityColors[communities[d.id] % communityColors.length]);
+
+            document.getElementById('analysisInfo').textContent = 
+                `Detected ${communityId} communities using modularity-based clustering. Communities represent tightly connected groups of houses.`;
+        }
+
+        function showTooltip(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            const connections = links.filter(l => 
+                (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id
+            );
+            
+            const allies = connections.filter(l => l.type === 'alliance').length;
+            const rivals = connections.filter(l => l.type === 'rivalry').length;
+            const marriages = connections.filter(l => l.type === 'marriage').length;
+
+            tooltip.innerHTML = `
+                <h3>${d.name}</h3>
+                <p><strong>Region:</strong> ${d.region}</p>
+                <p><strong>Words:</strong> ${d.words || 'Unknown'}</p>
+                <p><strong>Tier:</strong> ${d.tier.charAt(0).toUpperCase() + d.tier.slice(1)}</p>
+                <p><strong>Connections:</strong> ${connections.length}</p>
+                <p>Alliances: ${allies} | Rivalries: ${rivals} | Marriages: ${marriages}</p>
+            `;
+
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+            tooltip.style.opacity = 1;
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.opacity = 0;
+        }
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        document.getElementById('timePeriod').addEventListener('change', (e) => {
+            initGraph(e.target.value);
+            updatePeriodInfo(e.target.value);
+        });
+
+        document.getElementById('relationFilter').addEventListener('change', () => {
+            const filter = document.getElementById('relationFilter').value;
+            if (filter === 'all') {
+                links = housesData[document.getElementById('timePeriod').value].links.map(d => ({ ...d }));
+            } else {
+                links = housesData[document.getElementById('timePeriod').value].links
+                    .filter(l => l.type === filter)
+                    .map(d => ({ ...d }));
+            }
+            simulation.force('link').links(links);
+            updateGraph();
+        });
+
+        document.getElementById('nodeSize').addEventListener('change', () => {
+            updateGraph();
+        });
+
+        document.getElementById('linkStrength').addEventListener('input', (e) => {
+            document.getElementById('linkStrengthValue').textContent = e.target.value;
+            simulation.force('link').strength(e.target.value / 100);
+            simulation.alpha(0.3).restart();
+        });
+
+        document.getElementById('tierFilter').addEventListener('change', (e) => {
+            const filter = e.target.value;
+            const period = document.getElementById('timePeriod').value;
+            const data = housesData[period];
+            
+            if (filter === 'all') {
+                nodes = data.houses.map(d => ({ ...d }));
+                links = data.links.map(d => ({ ...d }));
+            } else if (filter === 'great') {
+                nodes = data.houses.filter(h => h.tier === 'great').map(d => ({ ...d }));
+                const nodeIds = new Set(nodes.map(n => n.id));
+                links = data.links.filter(l => nodeIds.has(l.source.id || l.source) && nodeIds.has(l.target.id || l.target)).map(d => ({ ...d }));
+            } else if (filter === 'great_major') {
+                nodes = data.houses.filter(h => h.tier === 'great' || h.tier === 'major').map(d => ({ ...d }));
+                const nodeIds = new Set(nodes.map(n => n.id));
+                links = data.links.filter(l => nodeIds.has(l.source.id || l.source) && nodeIds.has(l.target.id || l.target)).map(d => ({ ...d }));
+            }
+            
+            calculateMetrics();
+            simulation.nodes(nodes);
+            simulation.force('link').links(links);
+            updateGraph();
+            simulation.alpha(0.5).restart();
+        });
+
+        function updatePeriodInfo(period) {
+            const periodInfo = {
+                conquest: 'Aegon I Targaryen conquers six of the Seven Kingdoms with his dragons, establishing the Targaryen Dynasty.',
+                dance: 'Civil war between rival Targaryen factions (Blacks vs Greens) over succession, devastating both sides.',
+                blackfyre1: 'First major rebellion against Targaryen rule led by Daemon Blackfyre, ending at the Battle of Redgrass Field.',
+                dunk_egg: 'Period of Dunk and Egg adventures during the reign of Aerys I and the Great Council of 209 AC.',
+                summerhall: 'Tragedy at Summerhall where King Aegon V and many Targaryens died attempting to hatch dragon eggs.',
+                ninepenny: 'War of the Ninepenny Kings - Fifth Blackfyre Rebellion crushed by unified Westerosi forces.',
+                rebellion: "Robert's Rebellion overthrows the Mad King Aerys II Targaryen, establishing Baratheon rule.",
+                greyjoy: "Balon Greyjoy's failed rebellion against King Robert Baratheon, crushing Ironborn independence.",
+                war: 'War of Five Kings - Multi-faction civil war following Robert Baratheon\'s death with five claimants to power.'
+            };
+            
+            document.getElementById('analysisInfo').textContent = periodInfo[period] || 'Select a time period to view historical context.';
+        }
+
+        function downloadCSV() {
+            const period = document.getElementById('timePeriod').value;
+            const periodName = document.getElementById('timePeriod').selectedOptions[0].text;
+            
+            let nodesCSV = 'id,name,region,words,tier\n';
+            nodes.forEach(node => {
+                nodesCSV += `"${node.id}","${node.name}","${node.region}","${node.words}","${node.tier}"\n`;
+            });
+            
+            let edgesCSV = 'source,target,type,weight\n';
+            links.forEach(link => {
+                const sourceId = link.source.id || link.source;
+                const targetId = link.target.id || link.target;
+                edgesCSV += `"${sourceId}","${targetId}","${link.type}",${link.weight}\n`;
+            });
+            
+            const nodesBlob = new Blob([nodesCSV], { type: 'text/csv' });
+            const nodesUrl = URL.createObjectURL(nodesBlob);
+            const nodesLink = document.createElement('a');
+            nodesLink.href = nodesUrl;
+            nodesLink.download = `westeros_nodes_${period}.csv`;
+            nodesLink.click();
+            URL.revokeObjectURL(nodesUrl);
+            
+            setTimeout(() => {
+                const edgesBlob = new Blob([edgesCSV], { type: 'text/csv' });
+                const edgesUrl = URL.createObjectURL(edgesBlob);
+                const edgesLink = document.createElement('a');
+                edgesLink.href = edgesUrl;
+                edgesLink.download = `westeros_edges_${period}.csv`;
+                edgesLink.click();
+                URL.revokeObjectURL(edgesUrl);
+            }, 100);
+            
+            document.getElementById('analysisInfo').textContent = 
+                `Exported ${nodes.length} houses and ${links.length} relationships for ${periodName}.`;
+        }
+        
+        function downloadMAT() {
+            const period = document.getElementById('timePeriod').value;
+            const periodName = document.getElementById('timePeriod').selectedOptions[0].text;
+            
+            const nodeIndex = {};
+            nodes.forEach((node, i) => {
+                nodeIndex[node.id] = i;
+            });
+            
+            const n = nodes.length;
+            const adjMatrix = Array(n).fill(0).map(() => Array(n).fill(0));
+            
+            links.forEach(link => {
+                const sourceId = link.source.id || link.source;
+                const targetId = link.target.id || link.target;
+                const i = nodeIndex[sourceId];
+                const j = nodeIndex[targetId];
+                if (i !== undefined && j !== undefined) {
+                    adjMatrix[i][j] = link.weight;
+                    adjMatrix[j][i] = link.weight;
+                }
+            });
+            
+            let matContent = '% Westeros House Network - ' + periodName + '\n';
+            matContent += '% Generated: ' + new Date().toISOString() + '\n';
+            matContent += '% Based on AWOIAF Timeline\n\n';
+            
+            matContent += '% Adjacency Matrix (weighted)\n';
+            matContent += 'adjacency_matrix = [\n';
+            adjMatrix.forEach((row, i) => {
+                matContent += '  ' + row.join(', ');
+                if (i < adjMatrix.length - 1) matContent += ';\n';
+                else matContent += '\n';
+            });
+            matContent += '];\n\n';
+            
+            matContent += '% House Names\n';
+            matContent += 'house_names = {\n';
+            nodes.forEach((node, i) => {
+                matContent += `  '${node.name.replace(/'/g, "''")}'`;
+                if (i < nodes.length - 1) matContent += ';\n';
+                else matContent += '\n';
+            });
+            matContent += '};\n\n';
+            
+            matContent += '% Regions\n';
+            matContent += 'regions = {\n';
+            nodes.forEach((node, i) => {
+                matContent += `  '${node.region}'`;
+                if (i < nodes.length - 1) matContent += ';\n';
+                else matContent += '\n';
+            });
+            matContent += '};\n\n';
+            
+            matContent += '% House Tiers (1=great, 2=major, 3=minor)\n';
+            matContent += 'tiers = [\n';
+            nodes.forEach((node, i) => {
+                const tierNum = node.tier === 'great' ? 1 : node.tier === 'major' ? 2 : 3;
+                matContent += `  ${tierNum}`;
+                if (i < nodes.length - 1) matContent += ';\n';
+                else matContent += '\n';
+            });
+            matContent += '];\n\n';
+            
+            matContent += '% Edge List [source_idx, target_idx, weight]\n';
+            matContent += 'edge_list = [\n';
+            links.forEach((link, i) => {
+                const sourceId = link.source.id || link.source;
+                const targetId = link.target.id || link.target;
+                const srcIdx = nodeIndex[sourceId] + 1;
+                const tgtIdx = nodeIndex[targetId] + 1;
+                matContent += `  ${srcIdx}, ${tgtIdx}, ${link.weight}`;
+                if (i < links.length - 1) matContent += ';\n';
+                else matContent += '\n';
+            });
+            matContent += '];\n\n';
+            
+            matContent += '% Edge Types (1=alliance, 2=rivalry, 3=marriage, 4=sworn)\n';
+            matContent += 'edge_types = [\n';
+            links.forEach((link, i) => {
+                let typeNum;
+                if (link.type === 'alliance') typeNum = 1;
+                else if (link.type === 'rivalry') typeNum = 2;
+                else if (link.type === 'marriage') typeNum = 3;
+                else typeNum = 4;
+                matContent += `  ${typeNum}`;
+                if (i < links.length - 1) matContent += ';\n';
+                else matContent += '\n';
+            });
+            matContent += '];\n';
+            
+            const matBlob = new Blob([matContent], { type: 'text/plain' });
+            const matUrl = URL.createObjectURL(matBlob);
+            const matLink = document.createElement('a');
+            matLink.href = matUrl;
+            matLink.download = `westeros_network_${period}.m`;
+            matLink.click();
+            URL.revokeObjectURL(matUrl);
+            
+            document.getElementById('analysisInfo').textContent = 
+                `Exported ${nodes.length}×${nodes.length} adjacency matrix for ${periodName}.`;
+        }
+
+        // Initialize with Robert's Rebellion
+        initGraph('rebellion');
+        updatePeriodInfo('rebellion');
+    </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulting EPK | Joe Richard Saunders</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* EPK Specific Styles */
+        body.epk-body { background: #fff; color: #000; display: block; padding: 0; }
+        .epk-container { max-width: 900px; margin: 0 auto; background: #fff; padding: 4rem 2rem; }
+
+        .epk-header { display: flex; gap: 2rem; border-bottom: 4px solid var(--accent-color); padding-bottom: 2rem; margin-bottom: 2rem; align-items: flex-end; }
+        .epk-headshot { width: 200px; height: 200px; object-fit: cover; border: 1px solid #000; filter: grayscale(50%); }
+        .epk-title h1 { font-size: 2.5rem; line-height: 1; text-transform: uppercase; margin-bottom: 0.5rem; color: #000; }
+        .epk-title p { font-size: 1.2rem; font-family: var(--font-edit); font-style: italic; color: #666; }
+
+        .epk-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; }
+        .epk-section { margin-bottom: 2.5rem; }
+        .epk-section h2 { font-size: 1.2rem; border-bottom: 2px solid #000; padding-bottom: 0.5rem; margin-bottom: 1rem; color: #000; }
+
+        .service-list li { margin-bottom: 0.5rem; font-family: var(--font-ui); color: #444; }
+        .service-list li strong { color: #000; }
+
+        .print-btn { position: fixed; bottom: 2rem; right: 2rem; background: var(--accent-color); color: #fff; padding: 1rem 2rem; border-radius: 50px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 999; }
+        .print-btn:hover { background: #000; }
+
+        @media print {
+            .print-btn { display: none; }
+            body { margin: 0; padding: 0; }
+            .epk-container { width: 100%; max-width: none; padding: 0; }
+        }
+    </style>
+</head>
+<body class="epk-body">
+
+    <a href="javascript:window.print()" class="print-btn"><i class="fas fa-print"></i> SAVE AS PDF</a>
+
+    <div class="epk-container">
+        <!-- Header -->
+        <header class="epk-header">
+            <img src="images/Joe-Richard-Saunders-With-Jacket.jpg" alt="Headshot" class="epk-headshot">
+            <div class="epk-title">
+                <h1>Joe<br>Richard<br>Saunders</h1>
+                <p>Consulting for Film, TV, Healthcare, Non-Profits & Higher Academia</p>
+                <div style="margin-top: 1rem; font-size: 0.9rem; font-family: var(--font-ui);">
+                    <i class="fas fa-envelope"></i> booking@joerichardsaunders.com | Managed by Nine Minus Two, LLC
+                </div>
+            </div>
+        </header>
+
+        <div class="epk-grid">
+            <!-- Left Column: Services -->
+            <div class="main-col">
+                <section class="epk-section">
+                    <h2>THE PITCH</h2>
+                    <p style="margin-bottom: 1rem;">I am a working comedian and 2x life-threatening cancer survivor as a young adult who produces indie comedy shows in Baltimore and Washington DC. I consult for writers' rooms, non-profits, healthcare organizations, and universities that need dark humor, technical accuracy, and a reality check on cancer "resilience." As a standup comedian, I have performed on shows with Mary Beth Barone, Chris Kattan, Luke Severeid, Dan St. Germain, Felicia Folkes, and more. I can be seen regularly performing in Baltimore, Washington DC, Viriginia, and Pennslyvania.</p>
+                </section>
+
+                <section class="epk-section">
+                    <h2>FILM & TV SERVICES</h2>
+                    <ul class="service-list" style="list-style: square; padding-left: 1.2rem;">
+                        <li><strong>Script Accuracy Pass:</strong> Reviewing scripts for authentic depiction of academia, hospitals, oncology wards, Baltimore and Washington DC life, shipyard operations, and engineering factories.</li>
+                        <li><strong>Room Punch-Up:</strong> Adding "Smartest Idiot" dialogue and "Middle Class" perspective to character arcs.</li>
+                        <li><strong>Character Backstory:</strong> Developing realistic "Engineering/PhD burnout" or "Young Adult Survivor" archetypes that avoid Hollywood tropes.</li>
+                    </ul>
+                </section>
+
+                <section class="epk-section">
+                    <h2>HIGHER ED & SPEAKING</h2>
+                    <ul class="service-list" style="list-style: square; padding-left: 1.2rem;">
+                        <li><strong>Talk: "No One Cares, Man"</strong> – An invited keynote on the realities of surviving cancer as a young adult. Ulman Foundation: Screw Cancer, Brew Hope event 2025</li>
+                        <li><strong>Workshop: Humor in Healthcare</strong> – For medical students and nursing programs on bedside manner and the young adult cancer patient reality.</li>
+                        <li><strong>Video Series: HOW TO GET INTO STANDUP COMEDY: No One Cares, Man </strong> – A comedian's outlook applied to a modern tutorial for newcomers.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <!-- Right Column: Credentials -->
+            <div class="side-col">
+                <section class="epk-section">
+                    <h2>CREDENTIALS</h2>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Standup Comedy</strong><br>
+                        <span style="color:#666; font-size: 0.9rem;">Current. Notable performances include:
+						</br><i class="fas fa-check-square"></i> Shriver Auditorium at Johns Hopkins University (Mary Beth Barone)
+						</br><i class="fas fa-check-square"></i> Capital One Hall (Tysons, VA)
+						</br><i class="fas fa-check-square"></i> Black Box Theater (Silver Spring, MD)
+						</br><i class="fas fa-check-square"></i> Baltimore Comedy Festival, 2025
+						</br><i class="fas fa-check-square"></i> Winner: Magoobys Comedy Competition, December 2025
+						</br><i class="fas fa-check-square"></i> Invitation-only: Magooby's Comedian of the Year Competition 2023, 2024, 2025</span>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Wrtiting Program</strong><br>
+                        <span style="color:#666; font-size: 0.9rem;">Upright Citizens Brigade LA/NYC Training Center (inst. Monique Moses)</span>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Improv Comedy</strong><br>
+                        <span style="color:#666; font-size: 0.9rem;">Levels 1-2: Washington Improv Theater (inst. Nikki Frias, Eddison Wilkenson)</span>
+                    </div>
+                </section>
+
+                <section class="epk-section">
+                    <h2>AREAS OF EXPERTISE</h2>
+                    <ul style="list-style: none; line-height: 1.8; font-size: 0.9rem;">
+                        <li><i class="fas fa-check"></i> Young Adult Oncology</li>
+                        <li><i class="fas fa-check"></i> Higher Ed Bureaucracy & Shipyard Humor</li>
+                        <li><i class="fas fa-check"></i> Writing for Standup Comedy and Pilots</li>
+						<li><i class="fas fa-check"></i> Alternative Comedy</li>
+                        <li><i class="fas fa-check"></i> 2010s Music Lore</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+
+        <footer class="contact-bar">
+            &copy; 2026 Nine Minus Two, LLC. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>
